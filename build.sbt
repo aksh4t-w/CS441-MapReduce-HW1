@@ -29,7 +29,7 @@ libraryDependencies ++= Seq(
   "org.scalactic" %% "scalactic" % scalacticVersion,
   "org.scalatest" %% "scalatest" % scalacticVersion % Test,
   "org.scalatest" %% "scalatest-featurespec" % scalacticVersion % Test,
-  "com.typesafe" % "config" % typesafeConfigVersion,
+  "com.typesafe" % "config" % typesafeConfigVersion
 )
 libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "3.3.4"
 libraryDependencies += "org.apache.hadoop" % "hadoop-mapreduce-client-core" % "3.3.4"

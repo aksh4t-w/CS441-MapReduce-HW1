@@ -1,7 +1,9 @@
-package cs441HW1
+package CS441HW1
 
 import com.typesafe.config.ConfigFactory
-import cs441HW1.HelperUtils.CreateLogger
+import CS441HW1.HelperUtils.CreateLogger
+import CS441HW1.MR_Task1.logger
+import CS441HW1.MR_Task2.logger
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{IntWritable, Text}
@@ -16,32 +18,23 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 
 /**
  * This map reduce job takes in log files in a folder as input and outputs the number of messages of each log type
- * (INFO, DEBUG, WARN, ERROR) divided across time intervals of n seconds where n is passed as a parameter while
- * running the program.
- *
+ * (INFO, DEBUG, WARN, ERROR) in all the generated logs.
  */
 
-//class MR_Task1 {
-//
-//}
-
-object MR_Task1:
+object MR_Task3 {
   val logger = CreateLogger(this.getClass)
   private final val one = new IntWritable(1)
 
   class TokenMapper extends Mapper[Object, Text, Text, IntWritable] {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, IntWritable]#Context): Unit = {
       // Logic for mapper
-      val interval_length = context.getConfiguration.get("Interval").toInt
 
       val s: String = value.toString
       val t: Array[String] = s.split(" +")
 
+      // This part checks whether the log has one of the given types or not. If yes, it writes to the context.
       if (t.length > 2 && (t(2) == "INFO" || t(2) == "ERROR" || t(2) == "WARN" || t(2) == "DEBUG")) {
-        val time = new SimpleDateFormat("HH:mm:ss.SSS").parse(t(0))
-        val time_group = time.getTime.toInt / (interval_length * 1000)
-        val group_type_key = time_group.toString + ' ' + t(2)
-        context.write(new Text(group_type_key), one)
+        context.write(new Text(t(2)), one)
       }
     }
   }
@@ -50,15 +43,11 @@ object MR_Task1:
     override def reduce(key: Text, values: lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context): Unit = {
       // Logic for reducer
       val sum = values.asScala.foldLeft(0)(_ + _.get)
-      val interval_length = context.getConfiguration.get("Interval").toInt
-      val key_split = key.toString.split(' ')
-      val time_convert = key_split(0).toInt * (interval_length * 1000)
-      val time_group = new SimpleDateFormat("HH:mm:ss").format(time_convert)
-      context.write(new Text(time_group + ',' + key_split(1)), new IntWritable(sum))
+      context.write(new Text(key.toString), new IntWritable(sum))
     }
   }
-
-  @main def runTask1(inputPath: String, outputPath: String): Unit =
+  
+  @main def runTask3(inputPath: String, outputPath: String): Unit = {
     val configfile = ConfigFactory.load()
     val pattern = configfile.getString("MR_Tasks_Conf.Pattern")
     val time_interval = configfile.getString("MR_Tasks_Conf.TimeInterval")
@@ -68,7 +57,8 @@ object MR_Task1:
     conf.set("Interval", time_interval)
     conf.set("Pattern", pattern)
     conf.set("mapred.textoutputformat.separator", ",")
-
+    conf.set("mapreduce.job.reduces", "1")
+    
     logger.info("Setting up and starting map-reduce job")
     val job1 = Job.getInstance(conf)
     job1.setJarByClass(this.getClass)
@@ -83,3 +73,5 @@ object MR_Task1:
     FileOutputFormat.setOutputPath(job1, new Path(outputPath))
 
     System.exit(if (job1.waitForCompletion(true)) 0 else 1)
+  }
+}

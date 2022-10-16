@@ -1,8 +1,8 @@
-package cs441HW1
+package CS441HW1
 
 import com.typesafe.config.ConfigFactory
-import cs441HW1.HelperUtils.CreateLogger
-import cs441HW1.MR_Task1.logger
+import CS441HW1.HelperUtils.CreateLogger
+import CS441HW1.MR_Task1.logger
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{IntWritable, Text, WritableComparable, WritableComparator}
@@ -14,6 +14,7 @@ import java.lang
 import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 import scala.jdk.CollectionConverters.IterableHasAsScala
+
 /**
  * This map reduce job takes in log files in a folder as input and outputs the time intervals sorted
  * in descending order that contained most log messages of the type ERROR with injected regex pattern string instances.
@@ -33,14 +34,14 @@ object MR_Task2 {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, IntWritable]#Context): Unit = {
       // Logic for mapper
       val interval_length = context.getConfiguration.get("Interval").toInt
-      val match_pattern = Pattern.compile(context.getConfiguration.get("Pattern"))
+      val compiled_pattern = Pattern.compile(context.getConfiguration.get("Pattern"))
 
       val s: String = value.toString
       val t: Array[String] = s.split(" +")
-      val compiled_pattern = match_pattern.matcher(t(t.length - 1))
 
       if (t.length > 2 && t(2) == "ERROR") {
-        if (compiled_pattern.find()) {
+        val match_pattern = compiled_pattern.matcher(t(t.length - 1))
+        if (match_pattern.find()) {
           val time = new SimpleDateFormat("HH:mm:ss.SSS").parse(t(0))
           val time_group = time.getTime.toInt / (interval_length * 1000)
           context.write(new Text(time_group.toString), one)
@@ -56,6 +57,19 @@ object MR_Task2 {
     }
   }
 
+  class FinalMapper extends Mapper[Object, Text, IntWritable, Text] {
+    override def map(key: Object, value: Text, context: Mapper[Object, Text, IntWritable, Text]#Context): Unit = {
+      val pattern = Pattern.compile("(\\d+)\\s+(\\d+)")
+      val matcher = pattern.matcher(value.toString)
+      if (matcher.find()) {
+        val interval_length = context.getConfiguration.get("Interval").toInt
+        val time_convert = matcher.group(1).toInt * (interval_length * 1000)
+        val time_group = new SimpleDateFormat("HH:mm:ss").format(time_convert)
+        context.write(new IntWritable(matcher.group(2).toInt), new Text(time_group))
+      }
+    }
+  }
+
   class Comparator extends WritableComparator(classOf[IntWritable], true) {
     @SuppressWarnings(Array("rawtypes"))
     override def compare(w1: WritableComparable[_], w2: WritableComparable[_]): Int = {
@@ -65,23 +79,11 @@ object MR_Task2 {
     }
   }
 
-  class FinalMapper extends Mapper[Object, Text, IntWritable, Text] {
-    override def map(key: Object, value: Text, context: Mapper[Object, Text, IntWritable, Text]#Context): Unit = {
-      val pattern = Pattern.compile("(\\d+)\\s+(\\d+)")
-      val matcher = pattern.matcher(value.toString)
-      if (matcher.find()) {
-        val interval_length = context.getConfiguration.get("Interval").toInt
-        val time_convert = matcher.group(2).toInt * (interval_length * 1000)
-        val time_group = new SimpleDateFormat("HH:mm:ss").format(time_convert)
-        context.write(new IntWritable(matcher.group(2).toInt), new Text(time_group))
-      }
-    }
-  }
-
-  class FinalReducer extends Reducer[Object, Text, IntWritable, Text] {
-    override def reduce(key: Object, values: lang.Iterable[Text], context: Reducer[Object, Text, IntWritable, Text]#Context): Unit = {
+//  Final reducer is used to print the
+  class FinalReducer extends Reducer[Object, Text, Text, IntWritable] {
+    override def reduce(key: Object, values: lang.Iterable[Text], context: Reducer[Object, Text, Text, IntWritable]#Context): Unit = {
       values.forEach(time => {
-        context.write(new IntWritable(key.toString.toInt), new Text(time.toString))
+        context.write(new Text(time.toString), new IntWritable(key.toString.toInt))
       })
     }
   }
@@ -99,9 +101,11 @@ object MR_Task2 {
     logger.info("Setting up and starting map-reduce job1")
     val job1 = Job.getInstance(conf, "Parse Messages")
     job1.setJarByClass(this.getClass)
+
     job1.setMapperClass(classOf[TokenMapper])
     job1.setMapOutputKeyClass(classOf[Text])
     job1.setMapOutputValueClass(classOf[IntWritable])
+
     job1.setReducerClass(classOf[LogReducer])
     job1.setOutputKeyClass(classOf[Text])
     job1.setOutputValueClass(classOf[IntWritable])
@@ -111,8 +115,11 @@ object MR_Task2 {
 
     if (job1.waitForCompletion(true)) {
       logger.info("Setting up and starting map-reduce job2")
-      conf.set("mapred.textoutputformat.separator", ",")
+      conf.set("mapreduce.job.reduces", "1")
+//      conf.set("mapred.textoutputformat.separator", ",")
+
       val job2 = Job.getInstance(conf, "Job2")
+      job2.setJarByClass(this.getClass)
       job2.setSortComparatorClass(classOf[Comparator])
 
       job2.setMapperClass(classOf[FinalMapper])
@@ -120,8 +127,8 @@ object MR_Task2 {
       job2.setMapOutputValueClass(classOf[Text])
 
       job2.setReducerClass(classOf[FinalReducer])
-      job2.setOutputKeyClass(classOf[IntWritable])
-      job2.setOutputValueClass(classOf[Text])
+      job2.setOutputKeyClass(classOf[Text])
+      job2.setOutputValueClass(classOf[IntWritable])
 
       FileInputFormat.addInputPath(job2, new Path(outputPath1))
       FileOutputFormat.setOutputPath(job2, new Path(outputPath2))

@@ -8,3 +8,7 @@ This project implements different Map-Reduce tasks on a bunch of log files using
 It is later executed on AWS EMR to explore Map-Reduce on distributed objects in cloud. 
 
 ## Installation
+
+## Tasks
+
+## AWS Deployment

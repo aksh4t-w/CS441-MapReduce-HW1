@@ -7,7 +7,7 @@
  *   either express or implied.  See the License for the specific language governing permissions and limitations under the License.
  *
  */
-package cs441HW1.HelperUtils
+package CS441HW1.HelperUtils
 
 import org.slf4j.{Logger, LoggerFactory}
 
