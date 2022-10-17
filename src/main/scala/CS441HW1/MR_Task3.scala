@@ -25,6 +25,7 @@ object MR_Task3 {
   val logger = CreateLogger(this.getClass)
   private final val one = new IntWritable(1)
 
+  // This mapper class writes the log type to the context if a log of given type is found.
   class TokenMapper extends Mapper[Object, Text, Text, IntWritable] {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, IntWritable]#Context): Unit = {
       // Logic for mapper
@@ -39,6 +40,7 @@ object MR_Task3 {
     }
   }
 
+  // This class finds the count of each log type by summing up the values returned by the mappers.
   class LogReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
     override def reduce(key: Text, values: lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context): Unit = {
       // Logic for reducer

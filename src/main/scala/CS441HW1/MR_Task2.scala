@@ -30,6 +30,8 @@ object MR_Task2 {
   val logger = CreateLogger(this.getClass)
   private final val one = new IntWritable(1)
 
+  // This class defines the mapper for collating the key and value pairs from the logs based on the time intervals.
+  // It converts time to integer values and creates a time group by diving by the given time interval.
   class TokenMapper extends Mapper[Object, Text, Text, IntWritable] {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, IntWritable]#Context): Unit = {
       // Logic for mapper
@@ -50,6 +52,7 @@ object MR_Task2 {
     }
   }
 
+  // This class writes the interval and count to the context
   class LogReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
     override def reduce(key: Text, values: lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context): Unit = {
       val sum = values.asScala.foldLeft(0)(_ + _.get)
@@ -57,6 +60,7 @@ object MR_Task2 {
     }
   }
 
+  // This class converts the integer time back to date time format and writes count of matched logs as keys.
   class FinalMapper extends Mapper[Object, Text, IntWritable, Text] {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, IntWritable, Text]#Context): Unit = {
       val pattern = Pattern.compile("(\\d+)\\s+(\\d+)")
@@ -70,6 +74,7 @@ object MR_Task2 {
     }
   }
 
+  // This class overrides the compare function to sort the keys in descending order.
   class Comparator extends WritableComparator(classOf[IntWritable], true) {
     @SuppressWarnings(Array("rawtypes"))
     override def compare(w1: WritableComparable[_], w2: WritableComparable[_]): Int = {
@@ -79,7 +84,7 @@ object MR_Task2 {
     }
   }
 
-//  Final reducer is used to print the
+//  Final reducer is used to write the time interval and count of the pattern matched logs.
   class FinalReducer extends Reducer[Object, Text, Text, IntWritable] {
     override def reduce(key: Object, values: lang.Iterable[Text], context: Reducer[Object, Text, Text, IntWritable]#Context): Unit = {
       values.forEach(time => {

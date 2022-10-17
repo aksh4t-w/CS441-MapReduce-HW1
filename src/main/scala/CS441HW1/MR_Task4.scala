@@ -27,6 +27,7 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 object MR_Task4 {
   val logger = CreateLogger(this.getClass)
 
+  // This mapper class matches writes the length of patterns in the matched logs to the context.
   class TokenMapper extends Mapper[Object, Text, Text, IntWritable] {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, IntWritable]#Context): Unit = {
       // Logic for mapper
@@ -46,6 +47,7 @@ object MR_Task4 {
     }
   }
 
+  // This class finds the maximum of lengths (from values) returned by the mappers and writes them to the context for each log type.
   class LogReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
     override def reduce(key: Text, values: lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context): Unit = {
       // Logic for reducer

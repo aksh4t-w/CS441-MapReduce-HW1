@@ -48,6 +48,7 @@ object MR_Task1:
     }
   }
 
+  // This class defines the reducer to wrtie log type, interval and count to the context.
   class LogReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
     override def reduce(key: Text, values: lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context): Unit = {
       val sum = values.asScala.foldLeft(0)(_ + _.get)
