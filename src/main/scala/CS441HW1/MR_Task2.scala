@@ -22,10 +22,6 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
  * are the count of specified logs given.
  */
 
-//class MR_Task2 {
-//
-//}
-
 object MR_Task2 {
   val logger = CreateLogger(this.getClass)
   private final val one = new IntWritable(1)

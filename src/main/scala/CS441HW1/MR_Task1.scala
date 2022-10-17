@@ -20,10 +20,6 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
  * running the program.
  */
 
-//class MR_Task1 {
-//
-//}
-
 object MR_Task1:
   val logger = CreateLogger(this.getClass)
   private final val one = new IntWritable(1)
@@ -71,7 +67,7 @@ object MR_Task1:
     conf.set("Pattern", pattern)
     conf.set("mapred.textoutputformat.separator", ",")
     conf.set("mapreduce.job.reduces", "1")
-    
+
     logger.info("Setting up and starting map-reduce job")
     val job1 = Job.getInstance(conf)
     job1.setJarByClass(this.getClass)

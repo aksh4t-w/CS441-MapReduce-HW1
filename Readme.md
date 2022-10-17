@@ -6,7 +6,6 @@
 ## Introduction
 This project implements different Map-Reduce tasks on a bunch of log files using the Hadoop framework.
 It is later executed on AWS EMR to explore Map-Reduce on distributed objects in cloud.
-https://youtu.be/oxoc9e2yLkw
 
 ## Prerequisites
 * Java: JDK 18.0
